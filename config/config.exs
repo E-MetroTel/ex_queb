@@ -3,4 +3,5 @@
 use Mix.Config
 
 
+# Over ride defaults by adding these into your config.exs file.
 # config :ex_queb, filter_param: :q 

@@ -1,19 +1,36 @@
 # ExQueb
 
-**TODO: Add description**
+Generic Ecto Query Builder
+
+This is a helper library for sharing code between ex_admin and auth-ex 
+projects.
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed as:
+Add ex_queb to your deps:
 
-  1. Add ex_queb to your list of dependencies in `mix.exs`:
+mix.exs
+```elixir
+  defp deps do
+     ...
+     {:ex_queb, github: "E-MetroTel/ex_queb"}, 
+     ...
+  end
+```
 
-        def deps do
-          [{:ex_queb, "~> 0.0.1"}]
-        end
+Fetch and compile the dependency
 
-  2. Ensure ex_queb is started before your application:
+```mix do deps.get, deps.compile```
 
-        def application do
-          [applications: [:ex_queb]]
-        end
+## TODO
+
+This implementation contains code that is subject to SQL or Elixir 
+code injection. Need to re-factor.
+
+## License
+
+`ex_eueb` is Copyright (c) 2015 E-MetroTel
+
+The source code is released under the MIT License.
+
+Check [LICENSE](LICENSE) for more information.

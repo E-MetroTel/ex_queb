@@ -1,15 +1,15 @@
 defmodule ExQueb do
   import Ecto.Query
+  require Logger
 
   def filter(query, params) do
-
-    q = params[Application.get_env(:ex_queb, :filter_param, :q)] #Keyword.get(params, :q)
+    q = params[Application.get_env(:ex_queb, :filter_param, :q)] 
     if q do
-    #   filters = Map.to_list(q) |> Enum.filter(&(not elem(&1,1) in ["", nil])) |> Enum.map(&({Atom.to_string(elem(&1, 0)), elem(&1, 1)}))
-    #   string_filters(filters)
-    #   |> integer_filters(filters)
-    #   |> date_filters(filters)
-    #   |> build_filter_query(query)
+      filters = Map.to_list(q) |> Enum.filter(&(not elem(&1,1) in ["", nil])) |> Enum.map(&({Atom.to_string(elem(&1, 0)), elem(&1, 1)}))
+      string_filters(filters)
+      |> integer_filters(filters)
+      |> date_filters(filters)
+      |> build_filter_query(query)
     else
       query
     end
@@ -67,5 +67,39 @@ defmodule ExQueb do
     "where(query, [c], #{builder})"
     |> Code.eval_string([query: query], __ENV__)
     |> elem(0)
+  end
+
+  def build_order_bys(query, opts, :index, params) do
+    case Keyword.get(params, :order, nil) do
+      nil -> build_default_order_bys(query, opts, :index, params)
+      order -> 
+        case get_sort_order(order) do
+          nil -> build_default_order_bys(query, opts, :index, params)
+          {name, sort_order} -> 
+            name_atom = String.to_atom name
+            if sort_order == "desc" do
+              order_by query, [c], [desc: field(c, ^name_atom)]
+            else
+              order_by query, [c], [asc: field(c, ^name_atom)]
+            end
+
+        end
+    end
+  end
+  def build_order_bys(query, _, _, _), do: query
+
+  defp build_default_order_bys(query, _opts, :index, _params) do
+    case query.order_bys do
+      [] -> order_by(query, [c], [desc: c.id])
+      _ -> query
+    end
+  end
+
+  def get_sort_order(nil), do: nil
+  def get_sort_order(order) do
+    case Regex.scan ~r/(.+)_(desc|asc)$/, order do
+      [] -> nil
+      [[_, name, sort_order]] -> {name, sort_order}
+    end
   end
 end
