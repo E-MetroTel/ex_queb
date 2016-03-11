@@ -43,7 +43,9 @@ defmodule ExQueb do
     cond_str = condition_to_string condition
 
     Enum.filter_map(filters, &(String.match?(elem(&1,0), ~r/_#{condition}$/)), &({String.replace(elem(&1, 0), "_#{condition}", ""), elem(&1, 1)}))
-    |> Enum.reduce(builder, fn({k,v}, acc) -> acc <> ~s| and fragment("? #{cond_str} '?'", c.#{k}, \"#{cast_date_time(v)}\")| end)
+    |> Enum.reduce(builder, fn({k,v}, acc) -> 
+      acc <> ~s| and fragment("? #{cond_str} ?", c.#{k}, "#{cast_date_time(v)}")| 
+    end)
   end
 
   defp condition_to_string(condition) do
@@ -57,8 +59,10 @@ defmodule ExQueb do
   end
 
   defp cast_date_time(value) do
-    {:ok, dt} = Ecto.Date.cast(value)
-    Ecto.Date.to_string dt
+    {:ok, date} = Ecto.Date.cast(value)
+    date
+    |> Ecto.DateTime.from_date
+    |> Ecto.DateTime.to_string
   end
 
   defp build_filter_query("", query), do: query
