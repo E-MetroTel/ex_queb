@@ -22,11 +22,6 @@ Fetch and compile the dependency
 
 ```mix do deps.get, deps.compile```
 
-## TODO
-
-This implementation contains code that is subject to SQL or Elixir 
-code injection. Need to re-factor.
-
 ## License
 
 `ex_eueb` is Copyright (c) 2015 E-MetroTel

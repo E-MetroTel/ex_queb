@@ -5,19 +5,26 @@ defmodule ExQueb do
   def filter(query, params) do
     q = params[Application.get_env(:ex_queb, :filter_param, :q)] 
     if q do
-      filters = Map.to_list(q) |> Enum.filter(&(not elem(&1,1) in ["", nil])) |> Enum.map(&({Atom.to_string(elem(&1, 0)), elem(&1, 1)}))
-      string_filters(filters)
+      filters = Map.to_list(q) 
+      |> Enum.filter(&(not elem(&1,1) in ["", nil])) 
+      |> Enum.map(&({Atom.to_string(elem(&1, 0)), elem(&1, 1)}))
+
+      query
+      |> string_filters(filters)
       |> integer_filters(filters)
       |> date_filters(filters)
-      |> build_filter_query(query)
     else
       query
     end
   end
 
-  defp string_filters(filters) do
+  defp string_filters(query, filters) do
     Enum.filter_map(filters, &(String.match?(elem(&1,0), ~r/_contains$/)), &({String.replace(elem(&1, 0), "_contains", ""), elem(&1, 1)}))
-    |> Enum.reduce("", fn({k,v}, acc) -> acc <> ~s| and like(c.#{k}, "%#{v}%")| end)
+    |> Enum.reduce(query, fn({k,v}, acc) -> 
+      match = "%#{v}%"
+      fld = String.to_atom k
+      where(acc, [q], like(field(q, ^fld), ^match))
+    end)
   end
 
   defp integer_filters(builder, filters) do
@@ -34,9 +41,26 @@ defmodule ExQueb do
   end
 
   defp build_integer_filters(builder, filters, condition) do
-    cond_str = condition_to_string condition
     Enum.filter_map(filters, &(String.match?(elem(&1,0), ~r/_#{condition}$/)), &({String.replace(elem(&1, 0), "_#{condition}", ""), elem(&1, 1)}))
-    |> Enum.reduce(builder, fn({k,v}, acc) -> acc <> ~s| and c.#{k} #{cond_str} #{v}| end)
+    |> Enum.reduce(builder, fn({k,v}, acc) -> 
+      _build_integer_filter(acc, String.to_atom(k), v, condition)
+    end)
+  end
+
+  defp _build_integer_filter(query, fld, value, :eq) do
+    where(query, [q], field(q, ^fld) == ^value)
+  end
+  defp _build_integer_filter(query, fld, value, :lt) do
+    where(query, [q], field(q, ^fld) < ^value)
+  end
+  defp _build_integer_filter(query, fld, value, :gte) do
+    where(query, [q], field(q, ^fld) >= ^value)
+  end
+  defp _build_integer_filter(query, fld, value, :lte) do
+    where(query, [q], field(q, ^fld) <= ^value)
+  end
+  defp _build_integer_filter(query, fld, value, :gt) do
+    where(query, [q], field(q, ^fld) > ^value)
   end
 
   defp build_date_filters(builder, filters, condition) do
@@ -44,8 +68,15 @@ defmodule ExQueb do
 
     Enum.filter_map(filters, &(String.match?(elem(&1,0), ~r/_#{condition}$/)), &({String.replace(elem(&1, 0), "_#{condition}", ""), elem(&1, 1)}))
     |> Enum.reduce(builder, fn({k,v}, acc) -> 
-      acc <> ~s| and fragment("? #{cond_str} ?", c.#{k}, "#{cast_date_time(v)}")| 
+      _build_date_filter(acc, String.to_atom(k), cast_date_time(v), condition)
     end)
+  end
+
+  defp _build_date_filter(query, fld, value, :gte) do
+    where(query, [q], fragment("? >= ?", field(q, ^fld), type(^value, Ecto.DateTime)))
+  end
+  defp _build_date_filter(query, fld, value, :lte) do
+    where(query, [q], fragment("? <= ?", field(q, ^fld), type(^value, Ecto.DateTime)))
   end
 
   defp condition_to_string(condition) do
@@ -63,14 +94,6 @@ defmodule ExQueb do
     date
     |> Ecto.DateTime.from_date
     |> Ecto.DateTime.to_string
-  end
-
-  defp build_filter_query("", query), do: query
-  defp build_filter_query(builder, query) do
-    builder = String.replace(builder, ~r/^ and /, "")
-    "where(query, [c], #{builder})"
-    |> Code.eval_string([query: query], __ENV__)
-    |> elem(0)
   end
 
   def build_order_bys(query, opts, :index, params) do
