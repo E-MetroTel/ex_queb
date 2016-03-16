@@ -28,7 +28,7 @@ defmodule ExQueb.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [
-      {:ecto, "~> 1.0.7"}
+      {:ecto, "~> 1.1"}
     ]
   end
 end
