@@ -1,6 +1,6 @@
 # ExQueb
 
-Generic Ecto Query Builder
+Ecto Filter Query Builder
 
 This is a helper library for sharing code between ex_admin and auth-ex 
 projects.
@@ -13,7 +13,7 @@ mix.exs
 ```elixir
   defp deps do
      ...
-     {:ex_queb, github: "E-MetroTel/ex_queb"}, 
+     {:ex_queb, "~> 0.1"}, 
      ...
   end
 ```
@@ -24,7 +24,7 @@ Fetch and compile the dependency
 
 ## License
 
-`ex_eueb` is Copyright (c) 2015 E-MetroTel
+`ex_eueb` is Copyright (c) 2015-2016 E-MetroTel
 
 The source code is released under the MIT License.
 
