@@ -64,8 +64,6 @@ defmodule ExQueb do
   end
 
   defp build_date_filters(builder, filters, condition) do
-    cond_str = condition_to_string condition
-
     Enum.filter_map(filters, &(String.match?(elem(&1,0), ~r/_#{condition}$/)), &({String.replace(elem(&1, 0), "_#{condition}", ""), elem(&1, 1)}))
     |> Enum.reduce(builder, fn({k,v}, acc) -> 
       _build_date_filter(acc, String.to_atom(k), cast_date_time(v), condition)
@@ -79,16 +77,6 @@ defmodule ExQueb do
     where(query, [q], fragment("? <= ?", field(q, ^fld), type(^value, Ecto.DateTime)))
   end
 
-  defp condition_to_string(condition) do
-    case condition do
-      :gte -> ">="
-      :lte -> "<="
-      :gt -> ">"
-      :eq -> "=="
-      :lt -> "<"
-    end
-  end
-
   defp cast_date_time(value) do
     {:ok, date} = Ecto.Date.cast(value)
     date
@@ -98,12 +86,14 @@ defmodule ExQueb do
 
   def build_order_bys(query, opts, :index, params) do
     case Keyword.get(params, :order, nil) do
-      nil -> build_default_order_bys(query, opts, :index, params)
-      order -> 
+      nil ->
+        build_default_order_bys(query, opts, :index, params)
+      order ->
         case get_sort_order(order) do
-          nil -> build_default_order_bys(query, opts, :index, params)
+          nil ->
+            build_default_order_bys(query, opts, :index, params)
           {name, sort_order} -> 
-            name_atom = String.to_atom name
+            name_atom = String.to_existing_atom name
             if sort_order == "desc" do
               order_by query, [c], [desc: field(c, ^name_atom)]
             else
@@ -115,9 +105,12 @@ defmodule ExQueb do
   end
   def build_order_bys(query, _, _, _), do: query
 
-  defp build_default_order_bys(query, _opts, :index, _params) do
+  defp build_default_order_bys(query, opts, :index, _params) do
     case query.order_bys do
-      [] -> order_by(query, [c], [desc: c.id])
+      [] ->
+        index_opts = Map.get(opts, :index, []) |> Enum.into(%{})
+        {order, primary_key} = get_default_order_by_field(query, index_opts)
+        order_by(query, [c], [{^order, field(c, ^primary_key)}])
       _ -> query
     end
   end
@@ -127,6 +120,30 @@ defmodule ExQueb do
     case Regex.scan ~r/(.+)_(desc|asc)$/, order do
       [] -> nil
       [[_, name, sort_order]] -> {name, sort_order}
+    end
+  end
+
+  defp get_default_order_by_field(_query, %{default_sort: [{order, field}]}) do
+    {order, field}
+  end
+  defp get_default_order_by_field(query, %{default_sort_order: order}) do
+    {order, get_default_order_by_field(query)}
+  end
+  defp get_default_order_by_field(_query, %{default_sort_field: field}) do
+    {:desc, field}
+  end
+  defp get_default_order_by_field(query, _) do
+    {:desc, get_default_order_by_field(query)}
+  end
+
+  defp get_default_order_by_field(query) do
+    case query do
+      %{from: {_, mod}} ->
+        case mod.__schema__(:primary_key) do
+          [name |_] -> name
+          _ -> mod.__schema__(:fields) |> List.first
+        end
+      _ -> :id
     end
   end
 end
