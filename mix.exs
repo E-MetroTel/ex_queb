@@ -3,7 +3,7 @@ defmodule ExQueb.Mixfile do
 
   def project do
     [app: :ex_queb,
-     version: "0.1.2",
+     version: "0.1.3",
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -21,7 +21,7 @@ defmodule ExQueb.Mixfile do
 
   defp deps do
     [
-      {:ecto, "~> 1.1"}
+      {:ecto, "~> 2.0.0-rc"}
     ]
   end
 
