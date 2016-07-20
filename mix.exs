@@ -21,7 +21,7 @@ defmodule ExQueb.Mixfile do
 
   defp deps do
     [
-      {:ecto, "~> 2.0.0-rc"}
+      {:ecto, "~> 2.0.0"}
     ]
   end
 
