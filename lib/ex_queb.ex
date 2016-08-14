@@ -1,30 +1,23 @@
 defmodule ExQueb do
   import Ecto.Query
   require Logger
+  import ExQueb.StringFilters
+  alias ExQueb.StringFilters
 
   def filter(query, params) do
-    q = params[Application.get_env(:ex_queb, :filter_param, :q)] 
+    q = params[Application.get_env(:ex_queb, :filter_param, :q)]
     if q do
-      filters = Map.to_list(q) 
-      |> Enum.filter(&(not elem(&1,1) in ["", nil])) 
+      filters = Map.to_list(q)
+      |> Enum.filter(&(not elem(&1,1) in ["", nil]))
       |> Enum.map(&({Atom.to_string(elem(&1, 0)), elem(&1, 1)}))
 
       query
-      |> string_filters(filters)
+      |> ExQueb.StringFilters.string_filters(filters)
       |> integer_filters(filters)
       |> date_filters(filters)
     else
       query
     end
-  end
-
-  defp string_filters(query, filters) do
-    Enum.filter_map(filters, &(String.match?(elem(&1,0), ~r/_contains$/)), &({String.replace(elem(&1, 0), "_contains", ""), elem(&1, 1)}))
-    |> Enum.reduce(query, fn({k,v}, acc) -> 
-      match = "%#{v}%"
-      fld = String.to_atom k
-      where(acc, [q], like(field(q, ^fld), ^match))
-    end)
   end
 
   defp integer_filters(builder, filters) do
@@ -35,14 +28,14 @@ defmodule ExQueb do
   end
 
   defp date_filters(builder, filters) do
-    builder 
+    builder
     |> build_date_filters(filters, :gte)
     |> build_date_filters(filters, :lte)
   end
 
   defp build_integer_filters(builder, filters, condition) do
     Enum.filter_map(filters, &(String.match?(elem(&1,0), ~r/_#{condition}$/)), &({String.replace(elem(&1, 0), "_#{condition}", ""), elem(&1, 1)}))
-    |> Enum.reduce(builder, fn({k,v}, acc) -> 
+    |> Enum.reduce(builder, fn({k,v}, acc) ->
       _build_integer_filter(acc, String.to_atom(k), v, condition)
     end)
   end
@@ -65,7 +58,7 @@ defmodule ExQueb do
 
   defp build_date_filters(builder, filters, condition) do
     Enum.filter_map(filters, &(String.match?(elem(&1,0), ~r/_#{condition}$/)), &({String.replace(elem(&1, 0), "_#{condition}", ""), elem(&1, 1)}))
-    |> Enum.reduce(builder, fn({k,v}, acc) -> 
+    |> Enum.reduce(builder, fn({k,v}, acc) ->
       _build_date_filter(acc, String.to_atom(k), cast_date_time(v), condition)
     end)
   end
@@ -92,7 +85,7 @@ defmodule ExQueb do
         case get_sort_order(order) do
           nil ->
             build_default_order_bys(query, opts, :index, params)
-          {name, sort_order} -> 
+          {name, sort_order} ->
             name_atom = String.to_existing_atom name
             if sort_order == "desc" do
               order_by query, [c], [desc: field(c, ^name_atom)]
