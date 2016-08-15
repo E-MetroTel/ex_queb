@@ -80,6 +80,26 @@ defmodule ExQuebTest do
     assert_equal ExQueb.build_order_bys(query, opts, :index, [resource: "noprimarys"]), expected
   end
 
+  test "string filter contains" do
+    expected = where(Test.Model, [m], like(m.name, ^"%Test%"))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{name_contains: "Test"}}), expected
+  end
+
+  test "string filter begins with" do
+    expected = where(Test.Model, [m], like(m.name, ^"Test%"))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{name_begins_with: "Test"}}), expected
+  end
+
+  test "string filter ends with" do
+    expected = where(Test.Model, [m], like(m.name, ^"%Test"))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{name_ends_with: "Test"}}), expected
+  end
+
+  test "string filter equals" do
+    expected = where(Test.Model, [m], m.name == ^"Test")
+    assert_equal ExQueb.filter(Test.Model, %{q: %{name_equals: "Test"}}), expected
+  end
+
   def assert_equal(a, b) do
     assert inspect(a) == inspect(b)
   end
