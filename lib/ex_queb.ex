@@ -1,8 +1,5 @@
 defmodule ExQueb do
   import Ecto.Query
-  require Logger
-  import ExQueb.StringFilters
-  alias ExQueb.StringFilters
 
   def filter(query, params) do
     q = params[Application.get_env(:ex_queb, :filter_param, :q)]

@@ -1,5 +1,6 @@
 defmodule Test.Model do
-  use Ecto.Model
+  use Ecto.Schema
+  import Ecto
   schema "models" do
     field :name, :string
     field :age, :integer
@@ -9,7 +10,8 @@ defmodule Test.Model do
 end
 
 defmodule Test.Noid do
-  use Ecto.Model
+  use Ecto.Schema
+  import Ecto
   @primary_key {:name, :string, []}
   schema "noids" do
     field :description, :string
@@ -19,7 +21,8 @@ defmodule Test.Noid do
 end
 
 defmodule Test.Noprimary do
-  use Ecto.Model
+  use Ecto.Schema
+  import Ecto
   @primary_key false
   schema "noprimarys" do
     field :index, :integer
