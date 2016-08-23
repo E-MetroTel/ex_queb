@@ -1,9 +1,11 @@
 defmodule ExQueb.Mixfile do
   use Mix.Project
 
+  @version "0.2.2"
+
   def project do
     [app: :ex_queb,
-     version: "0.2.1",
+     version: @version,
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,

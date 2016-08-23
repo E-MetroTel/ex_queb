@@ -82,14 +82,17 @@ defmodule ExQueb do
     |> Ecto.DateTime.to_string
   end
 
-  def build_order_bys(query, opts, :index, params) do
+  @doc """
+  Build order for a given query.
+  """
+  def build_order_bys(query, opts, action, params) when action in ~w(index csv)a do
     case Keyword.get(params, :order, nil) do
       nil ->
-        build_default_order_bys(query, opts, :index, params)
+        build_default_order_bys(query, opts, action, params)
       order ->
         case get_sort_order(order) do
           nil ->
-            build_default_order_bys(query, opts, :index, params)
+            build_default_order_bys(query, opts, action, params)
           {name, sort_order} ->
             name_atom = String.to_existing_atom name
             if sort_order == "desc" do
@@ -103,16 +106,20 @@ defmodule ExQueb do
   end
   def build_order_bys(query, _, _, _), do: query
 
-  defp build_default_order_bys(query, opts, :index, _params) do
+  defp build_default_order_bys(query, opts, action, _params) when action in ~w(index csv)a do
     case query.order_bys do
       [] ->
-        index_opts = Map.get(opts, :index, []) |> Enum.into(%{})
+        index_opts = Map.get(opts, action, []) |> Enum.into(%{})
         {order, primary_key} = get_default_order_by_field(query, index_opts)
         order_by(query, [c], [{^order, field(c, ^primary_key)}])
       _ -> query
     end
   end
+  defp build_default_order_bys(query, _opts, _action, _params), do: query
 
+  @doc """
+  Get the sort order for a params entry.
+  """
   def get_sort_order(nil), do: nil
   def get_sort_order(order) do
     case Regex.scan ~r/(.+)_(desc|asc)$/, order do
