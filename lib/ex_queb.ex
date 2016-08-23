@@ -1,6 +1,14 @@
 defmodule ExQueb do
+  @moduledoc """
+  Build Ecto filter Queries.
+  """
   import Ecto.Query
 
+  @doc """
+  Create the filter
+
+  Uses the :q query parameter to build the filter.
+  """
   def filter(query, params) do
     q = params[Application.get_env(:ex_queb, :filter_param, :q)]
     if q do

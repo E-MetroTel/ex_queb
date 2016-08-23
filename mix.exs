@@ -7,7 +7,9 @@ defmodule ExQueb.Mixfile do
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
+     docs: [extras: ["README.md"], main: "ExQueb"],
      package: package,
+     name: "ExQueb",
      deps: deps,
      description: """
      Ecto Filter Query Builder
@@ -21,7 +23,9 @@ defmodule ExQueb.Mixfile do
 
   defp deps do
     [
-      {:ecto, "~> 2.0"}
+      {:ecto, "~> 2.0"},
+      {:ex_doc, "== 0.11.5", only: :dev},
+      {:earmark, "== 0.2.1", only: :dev, override: true},
     ]
   end
 

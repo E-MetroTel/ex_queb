@@ -1,7 +1,19 @@
 defmodule ExQueb.StringFilters do
-  import Ecto.Query
-  require Logger
+  @moduledoc """
+  Build Filters for String Fields.
 
+  String fields can be filtered by the following:
+
+  * begins with
+  * ends with
+  * contains
+  * equals
+  """
+  import Ecto.Query
+
+  @doc """
+  Build a string filter.
+  """
   def string_filters(builder, filters) do
     builder
     |> build_string_filters(filters, :begins_with)
