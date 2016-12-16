@@ -45,7 +45,7 @@ defmodule ExQuebTest do
 
   # %{blog_id_eq: "1", inserted_at_gte: nil, inserted_at_lte: nil, name_contains: nil, updated_at_gte: nil, updated_at_lte: nil}
   test "filters single field" do
-    expected = where(Test.Model, [m], like(m.name, ^"%Test%"))
+    expected = where(Test.Model, [m], ilike(m.name, ^"%Test%"))
     assert_equal ExQueb.filter(Test.Model, %{q: %{name_contains: "Test"}}), expected
   end
 
@@ -84,22 +84,22 @@ defmodule ExQuebTest do
   end
 
   test "string filter contains" do
-    expected = where(Test.Model, [m], like(m.name, ^"%Test%"))
+    expected = where(Test.Model, [m], ilike(m.name, ^"%Test%"))
     assert_equal ExQueb.filter(Test.Model, %{q: %{name_contains: "Test"}}), expected
   end
 
   test "string filter begins with" do
-    expected = where(Test.Model, [m], like(m.name, ^"Test%"))
+    expected = where(Test.Model, [m], ilike(m.name, ^"Test%"))
     assert_equal ExQueb.filter(Test.Model, %{q: %{name_begins_with: "Test"}}), expected
   end
 
   test "string filter ends with" do
-    expected = where(Test.Model, [m], like(m.name, ^"%Test"))
+    expected = where(Test.Model, [m], ilike(m.name, ^"%Test"))
     assert_equal ExQueb.filter(Test.Model, %{q: %{name_ends_with: "Test"}}), expected
   end
 
   test "string filter equals" do
-    expected = where(Test.Model, [m], m.name == ^"Test")
+    expected = where(Test.Model, [m], fragment("LOWER(?)", m.name) == fragment("LOWER(?)", ^"Test"))
     assert_equal ExQueb.filter(Test.Model, %{q: %{name_equals: "Test"}}), expected
   end
 

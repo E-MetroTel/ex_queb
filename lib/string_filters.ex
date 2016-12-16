@@ -33,24 +33,24 @@ defmodule ExQueb.StringFilters do
 
   defp _build_string_filter(builder, field, value, :begins_with) do
     match = "#{value}%"
-    where(builder, [q], like(field(q, ^field), ^match))
+    where(builder, [q], ilike(field(q, ^field), ^match))
   end
 
   defp _build_string_filter(builder, field, value, :ends_with) do
     match = "%#{value}"
-    where(builder, [q], like(field(q, ^field), ^match))
+    where(builder, [q], ilike(field(q, ^field), ^match))
   end
 
   defp _build_string_filter(builder, field, value, :contains) do
     match = "%#{value}%"
-    where(builder, [q], like(field(q, ^field), ^match))
+    where(builder, [q], ilike(field(q, ^field), ^match))
   end
 
   defp _build_string_filter(builder, field, value, :equals) do
-    where(builder, [q], field(q, ^field) == ^value)
+    where(builder, [q], fragment("LOWER(?)", field(q, ^field)) == fragment("LOWER(?)", ^value))
   end
 
   defp _build_string_filter(builder, field, value, _) do
-    where(builder, [q], field(q, ^field) == ^value)
+    where(builder, [q], fragment("LOWER(?)", field(q, ^field)) == fragment("LOWER(?)", ^value))
   end
 end
