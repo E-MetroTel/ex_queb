@@ -32,17 +32,17 @@ defmodule ExQueb.StringFilters do
   end
 
   defp _build_string_filter(builder, field, value, :begins_with) do
-    match = "#{String.downcase(value)}%"
+    match = String.downcase(value) <> "%"
     where(builder, [q], like(fragment("LOWER(?)", field(q, ^field)), ^match))
   end
 
   defp _build_string_filter(builder, field, value, :ends_with) do
-    match = "%#{String.downcase(value)}"
+    match = "%" <> String.downcase(value)
     where(builder, [q], like(fragment("LOWER(?)", field(q, ^field)), ^match))
   end
 
   defp _build_string_filter(builder, field, value, :contains) do
-    match = "%#{String.downcase(value)}%"
+    match = "%" <> String.downcase(value) <> "%"
     where(builder, [q], like(fragment("LOWER(?)", field(q, ^field)), ^match))
   end
 
