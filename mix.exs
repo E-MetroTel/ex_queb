@@ -1,7 +1,7 @@
 defmodule ExQueb.Mixfile do
   use Mix.Project
 
-  @version "0.2.2"
+  @version "1.0.0"
 
   def project do
     [app: :ex_queb,
@@ -10,9 +10,9 @@ defmodule ExQueb.Mixfile do
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      docs: [extras: ["README.md"], main: "ExQueb"],
-     package: package,
+     package: package(),
      name: "ExQueb",
-     deps: deps,
+     deps: deps(),
      description: """
      Ecto Filter Query Builder
      """

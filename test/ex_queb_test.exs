@@ -4,7 +4,7 @@ defmodule Test.Model do
     field :name, :string
     field :age, :integer
 
-    timestamps
+    timestamps()
   end
 end
 
@@ -14,7 +14,7 @@ defmodule Test.Noid do
   schema "noids" do
     field :description, :string
 
-    timestamps
+    timestamps()
   end
 end
 
@@ -26,7 +26,7 @@ defmodule Test.Noprimary do
     field :name, :string
     field :description, :string
 
-    timestamps
+    timestamps()
   end
 end
 
