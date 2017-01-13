@@ -14,10 +14,10 @@ defmodule ExQueb do
     if q do
       filters = Map.to_list(q)
       |> Enum.filter(&(not elem(&1,1) in ["", nil]))
-      |> Enum.map(fn(item) ->
-        case is_atom(elem(item,0)) do
-          true -> {Atom.to_string(elem(item, 0)), elem(item, 1)}
-          false -> { elem(item, 0), elem(item, 1)}
+      |> Enum.map(fn({key, value}) ->
+        case is_atom(key) do
+          true -> {Atom.to_string(key), value}
+          false -> { key, value }
         end
       end)
 
