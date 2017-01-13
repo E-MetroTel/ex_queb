@@ -46,6 +46,12 @@ defmodule ExQuebTest do
     assert_equal ExQueb.filter(Test.Model, %{q: %{name_contains: "Test"}}), expected
   end
 
+  test "filters can be strings" do
+    expected = where(Test.Model, [m], like(fragment("LOWER(?)", m.name), ^"%test%"))
+    params =  %{q: %{"name_contains" => "Test"}}
+    assert_equal ExQueb.filter(Test.Model,params), expected
+  end
+
   test "handles different default primary key" do
     query = from n in Test.Noid, preload: []
     expected = from n in Test.Noid, order_by: [desc: n.name]
