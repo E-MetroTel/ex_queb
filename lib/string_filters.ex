@@ -23,8 +23,9 @@ defmodule ExQueb.StringFilters do
   end
 
   defp build_string_filters(builder, filters, type) do
-    Enum.filter_map(filters, &(String.match?(elem(&1,0), ~r/_#{type}$/)),
-                             &({String.replace(elem(&1, 0), "_#{type}", ""), elem(&1, 1)}))
+    filters
+    |> Enum.filter(& String.match?(elem(&1,0), ~r/_#{type}$/))
+    |> Enum.map(& {String.replace(elem(&1, 0), "_#{type}", ""), elem(&1, 1)})
     |> Enum.reduce(builder, fn({k,v}, acc) ->
       fld = String.to_atom k
       _build_string_filter(acc, fld, v, type)

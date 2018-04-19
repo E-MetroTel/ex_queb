@@ -1,7 +1,7 @@
 defmodule ExQueb.Mixfile do
   use Mix.Project
 
-  @version "1.0.0"
+  @version "1.0.1"
 
   def project do
     [app: :ex_queb,
@@ -26,8 +26,8 @@ defmodule ExQueb.Mixfile do
   defp deps do
     [
       {:ecto, "~> 2.0"},
-      {:ex_doc, "== 0.11.5", only: :dev},
-      {:earmark, "== 0.2.1", only: :dev, override: true},
+      {:ex_doc, "~> 0.18.0", only: :dev},
+      {:earmark, "~> 1.1", only: :dev},
     ]
   end
 

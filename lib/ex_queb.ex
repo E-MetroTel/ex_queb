@@ -39,7 +39,9 @@ defmodule ExQueb do
   end
 
   defp build_integer_filters(builder, filters, condition) do
-    Enum.filter_map(filters, &(String.match?(elem(&1,0), ~r/_#{condition}$/)), &({String.replace(elem(&1, 0), "_#{condition}", ""), elem(&1, 1)}))
+    filters
+    |> Enum.filter(& String.match?(elem(&1,0), ~r/_#{condition}$/))
+    |> Enum.map(& {String.replace(elem(&1, 0), "_#{condition}", ""), elem(&1, 1)})
     |> Enum.reduce(builder, fn({k,v}, acc) ->
       _build_integer_filter(acc, String.to_atom(k), v, condition)
     end)
@@ -62,7 +64,9 @@ defmodule ExQueb do
   end
 
   defp build_date_filters(builder, filters, condition) do
-    Enum.filter_map(filters, &(String.match?(elem(&1,0), ~r/_#{condition}$/)), &({String.replace(elem(&1, 0), "_#{condition}", ""), elem(&1, 1)}))
+    filters
+    |> Enum.filter(& String.match?(elem(&1,0), ~r/_#{condition}$/))
+    |> Enum.map(& {String.replace(elem(&1, 0), "_#{condition}", ""), elem(&1, 1)})
     |> Enum.reduce(builder, fn({k,v}, acc) ->
       _build_date_filter(acc, String.to_atom(k), cast_date_time(v), condition)
     end)
