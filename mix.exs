@@ -1,12 +1,12 @@
 defmodule ExQueb.Mixfile do
   use Mix.Project
 
-  @version "1.0.1"
+  @version "1.1.0"
 
   def project do
     [app: :ex_queb,
      version: @version,
-     elixir: "~> 1.2",
+     elixir: "~> 1.7",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      docs: [extras: ["README.md"], main: "ExQueb"],
@@ -25,7 +25,7 @@ defmodule ExQueb.Mixfile do
 
   defp deps do
     [
-      {:ecto, "~> 2.0"},
+      {:ecto, "~> 3.0"},
       {:ex_doc, "~> 0.18.0", only: :dev},
       {:earmark, "~> 1.1", only: :dev},
     ]
