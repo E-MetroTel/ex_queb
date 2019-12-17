@@ -4,25 +4,41 @@ defmodule ExQueb do
   """
   import Ecto.Query
 
+  @filter_with_nil_value [:is_null, :is_not_null]
+
   @doc """
   Create the filter
 
   Uses the :q query parameter to build the filter.
   """
   def filter(query, params) do
-    q = params[Application.get_env(:ex_queb, :filter_param, :q)]
-    if q do
-      filters = Map.to_list(q)
-      |> Enum.filter(&(not elem(&1,1) in ["", nil]))
-      |> Enum.map(&({Atom.to_string(elem(&1, 0)), elem(&1, 1)}))
-
+    filters =
+      params[Application.get_env(:ex_queb, :filter_param, :q)]
+      |> params_to_filters()
+    if filters do
       query
       |> ExQueb.StringFilters.string_filters(filters)
       |> integer_filters(filters)
       |> date_filters(filters)
+      |> boolean_filters(filters)
     else
       query
     end
+  end
+
+  def params_to_filters(nil), do: nil
+  def params_to_filters(q) do
+    Map.to_list(q)
+    |> Enum.filter(&keep_if_value_present_or_nilable/1)
+    |> Enum.map(&({Atom.to_string(elem(&1, 0)), elem(&1, 1)}))
+  end
+
+  defp keep_if_value_present_or_nilable({k, v}) do
+    not v in ["", nil] ||
+    Enum.any?(@filter_with_nil_value, fn exception -> String.ends_with?(
+      Atom.to_string(k),
+      Atom.to_string(exception)
+    ) end)
   end
 
   defp integer_filters(builder, filters) do
@@ -38,13 +54,14 @@ defmodule ExQueb do
     |> build_date_filters(filters, :lte)
   end
 
+  defp boolean_filters(builder, filters) do
+    builder
+    |> build_boolean_filters(filters, :is_not_null)
+    |> build_boolean_filters(filters, :is_null)
+  end
+
   defp build_integer_filters(builder, filters, condition) do
-    filters
-    |> Enum.filter(& String.match?(elem(&1,0), ~r/_#{condition}$/))
-    |> Enum.map(& {String.replace(elem(&1, 0), "_#{condition}", ""), elem(&1, 1)})
-    |> Enum.reduce(builder, fn({k,v}, acc) ->
-      _build_integer_filter(acc, String.to_atom(k), v, condition)
-    end)
+    map_filters(builder, filters, condition, &_build_integer_filter/4)
   end
 
   defp _build_integer_filter(query, fld, value, :eq) do
@@ -64,12 +81,7 @@ defmodule ExQueb do
   end
 
   defp build_date_filters(builder, filters, condition) do
-    filters
-    |> Enum.filter(& String.match?(elem(&1,0), ~r/_#{condition}$/))
-    |> Enum.map(& {String.replace(elem(&1, 0), "_#{condition}", ""), elem(&1, 1)})
-    |> Enum.reduce(builder, fn({k,v}, acc) ->
-      _build_date_filter(acc, String.to_atom(k), cast_date_time(v), condition)
-    end)
+    map_filters(builder, filters, condition, &_build_date_filter/4, &cast_date_time/1)
   end
 
   defp _build_date_filter(query, fld, value, :gte) do
@@ -79,11 +91,32 @@ defmodule ExQueb do
     where(query, [q], fragment("? <= ?", field(q, ^fld), type(^value, Ecto.DateTime)))
   end
 
+  defp build_boolean_filters(builder, filters, condition) do
+    map_filters(builder, filters, condition, &_build_boolean_filter/4)
+  end
+
+  defp _build_boolean_filter(query, fld, value, :is_not_null) do
+    where(query, [q], not is_nil(field(q, ^fld)))
+  end
+
+  defp _build_boolean_filter(query, fld, value, :is_null) do
+    where(query, [q], is_nil(field(q, ^fld)))
+  end
+
   defp cast_date_time(value) do
     {:ok, date} = Ecto.Date.cast(value)
     date
     |> Ecto.DateTime.from_date
     |> Ecto.DateTime.to_string
+  end
+
+  defp map_filters(builder, filters, condition, reduce_fn, map_value_fn\\fn v -> v end) do
+    filters
+    |> Enum.filter(& String.match?(elem(&1,0), ~r/_#{condition}$/))
+    |> Enum.map(& {String.replace(elem(&1, 0), "_#{condition}", ""), elem(&1, 1)})
+    |> Enum.reduce(builder, fn({k,v}, acc) ->
+      reduce_fn.(acc, String.to_atom(k), map_value_fn.(v), condition)
+    end)
   end
 
   @doc """

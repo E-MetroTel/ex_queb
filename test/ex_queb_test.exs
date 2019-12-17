@@ -3,6 +3,16 @@ defmodule Test.Model do
   schema "models" do
     field :name, :string
     field :age, :integer
+    embeds_one(:embed, Test.Embed)
+
+    timestamps()
+  end
+end
+
+defmodule Test.Embed do
+  use Ecto.Schema
+  schema "models" do
+    field :name, :string
 
     timestamps()
   end
@@ -98,6 +108,41 @@ defmodule ExQuebTest do
   test "string filter equals" do
     expected = where(Test.Model, [m], fragment("LOWER(?)", m.name) == fragment("LOWER(?)", ^"Test"))
     assert_equal ExQueb.filter(Test.Model, %{q: %{name_equals: "Test"}}), expected
+  end
+
+  test "string filter equals nil" do
+    expected = Test.Model
+    assert_equal ExQueb.filter(Test.Model, %{q: %{name_equals: nil}}), expected
+  end
+
+  test "string filter is not null" do
+    expected = where(Test.Model, [m], not is_nil(m.name))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{name_is_not_null: nil}}), expected
+  end
+
+  test "string filter is null" do
+    expected = where(Test.Model, [m], is_nil(m.name))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{name_is_null: nil}}), expected
+  end
+
+  test "integer filter is not null" do
+    expected = where(Test.Model, [m], not is_nil(m.age))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_is_not_null: nil}}), expected
+  end
+
+  test "integer filter is null" do
+    expected = where(Test.Model, [m], is_nil(m.age))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_is_null: nil}}), expected
+  end
+
+  test "embed filter is not null" do
+    expected = where(Test.Model, [m], not is_nil(m.embed))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{embed_is_not_null: nil}}), expected
+  end
+
+  test "embed filter is null" do
+    expected = where(Test.Model, [m], is_nil(m.embed))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{embed_is_null: nil}}), expected
   end
 
   def assert_equal(a, b) do
