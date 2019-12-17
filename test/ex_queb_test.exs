@@ -90,6 +90,26 @@ defmodule ExQuebTest do
     assert_equal ExQueb.build_order_bys(query, opts, :index, [resource: "noprimarys"]), expected
   end
 
+  test "integer filter greater than" do
+    expected = where(Test.Model, [m], m.age > ^10)
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_gt: 10}}), expected
+  end
+
+  test "integer filter lower than" do
+    expected = where(Test.Model, [m], m.age < ^10)
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_lt: 10}}), expected
+  end
+
+  test "integer filter lower than nil" do
+    expected = Test.Model
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_lt: nil}}), expected
+  end
+
+  test "integer filter in list" do
+    expected = where(Test.Model, [m], m.age in ^[10, 11, 12])
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_in: [10, 11, 12]}}), expected
+  end
+
   test "string filter contains" do
     expected = where(Test.Model, [m], like(fragment("LOWER(?)", m.name), ^"%test%"))
     assert_equal ExQueb.filter(Test.Model, %{q: %{name_contains: "Test"}}), expected

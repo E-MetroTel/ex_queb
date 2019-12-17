@@ -15,7 +15,7 @@ defmodule ExQueb do
     filters =
       params[Application.get_env(:ex_queb, :filter_param, :q)]
       |> params_to_filters()
-    if filters do
+      if filters do
       query
       |> ExQueb.StringFilters.string_filters(filters)
       |> integer_filters(filters)
@@ -34,7 +34,7 @@ defmodule ExQueb do
   end
 
   defp keep_if_value_present_or_nilable({k, v}) do
-    not v in ["", nil] ||
+    (v not in ["", nil, []]) ||
     Enum.any?(@filter_with_nil_value, fn exception -> String.ends_with?(
       Atom.to_string(k),
       Atom.to_string(exception)
@@ -46,6 +46,7 @@ defmodule ExQueb do
     |> build_integer_filters(filters, :eq)
     |> build_integer_filters(filters, :lt)
     |> build_integer_filters(filters, :gt)
+    |> build_integer_filters(filters, :in)
   end
 
   defp date_filters(builder, filters) do
@@ -79,6 +80,9 @@ defmodule ExQueb do
   defp _build_integer_filter(query, fld, value, :gt) do
     where(query, [q], field(q, ^fld) > ^value)
   end
+  defp _build_integer_filter(query, fld, value, :in) do
+    where(query, [q], field(q, ^fld) in ^value)
+  end
 
   defp build_date_filters(builder, filters, condition) do
     map_filters(builder, filters, condition, &_build_date_filter/4, &cast_date_time/1)
@@ -95,11 +99,11 @@ defmodule ExQueb do
     map_filters(builder, filters, condition, &_build_boolean_filter/4)
   end
 
-  defp _build_boolean_filter(query, fld, value, :is_not_null) do
+  defp _build_boolean_filter(query, fld, _value, :is_not_null) do
     where(query, [q], not is_nil(field(q, ^fld)))
   end
 
-  defp _build_boolean_filter(query, fld, value, :is_null) do
+  defp _build_boolean_filter(query, fld, _value, :is_null) do
     where(query, [q], is_nil(field(q, ^fld)))
   end
 
