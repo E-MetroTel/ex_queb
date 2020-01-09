@@ -70,7 +70,8 @@ defmodule ExQueb do
     where(query, [q], field(q, ^fld) > ^value)
   end
   defp _build_integer_filter(query, fld, value, :in) do
-    where(query, [q], field(q, ^fld) in ^value)
+    value_list = value |> String.split(",") |> Enum.map(&String.trim/1) |> Enum.map(&String.to_integer/1)
+    where(query, [q], field(q, ^fld) in ^value_list)
   end
 
   defp build_date_filters(builder, filters, condition) do

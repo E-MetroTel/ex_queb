@@ -105,9 +105,19 @@ defmodule ExQuebTest do
     assert_equal ExQueb.filter(Test.Model, %{q: %{age_lt: nil}}), expected
   end
 
+  test "integer filter in single element list" do
+    expected = where(Test.Model, [m], m.age in ^[10])
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_in: "10"}}), expected
+  end
+
   test "integer filter in list" do
     expected = where(Test.Model, [m], m.age in ^[10, 11, 12])
-    assert_equal ExQueb.filter(Test.Model, %{q: %{age_in: [10, 11, 12]}}), expected
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_in: "10,11,12"}}), expected
+  end
+
+  test "integer filter in list with spaces" do
+    expected = where(Test.Model, [m], m.age in ^[10, 11, 12])
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_in: "10, 11 , 12"}}), expected
   end
 
   test "string filter contains" do
