@@ -88,11 +88,11 @@ defmodule ExQueb do
     map_filters(builder, filters, condition, &_build_boolean_filter/4)
   end
 
-  defp _build_boolean_filter(query, fld, :not_null, :is) do
+  defp _build_boolean_filter(query, fld, "not_null", :is) do
     where(query, [q], not is_nil(field(q, ^fld)))
   end
 
-  defp _build_boolean_filter(query, fld, :null, :is) do
+  defp _build_boolean_filter(query, fld, "null", :is) do
     where(query, [q], is_nil(field(q, ^fld)))
   end
 
