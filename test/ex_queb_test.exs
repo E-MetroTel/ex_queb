@@ -137,32 +137,32 @@ defmodule ExQuebTest do
 
   test "string filter is not null" do
     expected = where(Test.Model, [m], not is_nil(m.name))
-    assert_equal ExQueb.filter(Test.Model, %{q: %{name_is_not_null: nil}}), expected
+    assert_equal ExQueb.filter(Test.Model, %{q: %{name_is: :not_null}}), expected
   end
 
   test "string filter is null" do
     expected = where(Test.Model, [m], is_nil(m.name))
-    assert_equal ExQueb.filter(Test.Model, %{q: %{name_is_null: nil}}), expected
+    assert_equal ExQueb.filter(Test.Model, %{q: %{name_is: :null}}), expected
   end
 
   test "integer filter is not null" do
     expected = where(Test.Model, [m], not is_nil(m.age))
-    assert_equal ExQueb.filter(Test.Model, %{q: %{age_is_not_null: nil}}), expected
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_is: :not_null}}), expected
   end
 
   test "integer filter is null" do
     expected = where(Test.Model, [m], is_nil(m.age))
-    assert_equal ExQueb.filter(Test.Model, %{q: %{age_is_null: nil}}), expected
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_is: :null}}), expected
   end
 
   test "embed filter is not null" do
     expected = where(Test.Model, [m], not is_nil(m.embed))
-    assert_equal ExQueb.filter(Test.Model, %{q: %{embed_is_not_null: nil}}), expected
+    assert_equal ExQueb.filter(Test.Model, %{q: %{embed_is: :not_null}}), expected
   end
 
   test "embed filter is null" do
     expected = where(Test.Model, [m], is_nil(m.embed))
-    assert_equal ExQueb.filter(Test.Model, %{q: %{embed_is_null: nil}}), expected
+    assert_equal ExQueb.filter(Test.Model, %{q: %{embed_is: :null}}), expected
   end
 
   def assert_equal(a, b) do

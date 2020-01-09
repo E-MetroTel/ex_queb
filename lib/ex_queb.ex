@@ -4,8 +4,6 @@ defmodule ExQueb do
   """
   import Ecto.Query
 
-  @filter_with_nil_value [:is_null, :is_not_null]
-
   @doc """
   Create the filter
 
@@ -29,16 +27,8 @@ defmodule ExQueb do
   def params_to_filters(nil), do: nil
   def params_to_filters(q) do
     Map.to_list(q)
-    |> Enum.filter(&keep_if_value_present_or_nilable/1)
+    |> Enum.filter(fn {_k, v} -> v not in ["", nil, []] end)
     |> Enum.map(&({Atom.to_string(elem(&1, 0)), elem(&1, 1)}))
-  end
-
-  defp keep_if_value_present_or_nilable({k, v}) do
-    (v not in ["", nil, []]) ||
-    Enum.any?(@filter_with_nil_value, fn exception -> String.ends_with?(
-      Atom.to_string(k),
-      Atom.to_string(exception)
-    ) end)
   end
 
   defp integer_filters(builder, filters) do
@@ -57,8 +47,7 @@ defmodule ExQueb do
 
   defp boolean_filters(builder, filters) do
     builder
-    |> build_boolean_filters(filters, :is_not_null)
-    |> build_boolean_filters(filters, :is_null)
+    |> build_boolean_filters(filters, :is)
   end
 
   defp build_integer_filters(builder, filters, condition) do
@@ -99,11 +88,11 @@ defmodule ExQueb do
     map_filters(builder, filters, condition, &_build_boolean_filter/4)
   end
 
-  defp _build_boolean_filter(query, fld, _value, :is_not_null) do
+  defp _build_boolean_filter(query, fld, :not_null, :is) do
     where(query, [q], not is_nil(field(q, ^fld)))
   end
 
-  defp _build_boolean_filter(query, fld, _value, :is_null) do
+  defp _build_boolean_filter(query, fld, :null, :is) do
     where(query, [q], is_nil(field(q, ^fld)))
   end
 
