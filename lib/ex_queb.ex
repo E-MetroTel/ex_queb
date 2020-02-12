@@ -75,14 +75,14 @@ defmodule ExQueb do
   end
 
   defp build_date_filters(builder, filters, condition) do
-    map_filters(builder, filters, condition, &_build_date_filter/4, &cast_date_time/1)
+    map_filters(builder, filters, condition, &_build_date_filter/4)
   end
 
-  defp _build_date_filter(query, fld, value, :gte) do
-    where(query, [q], fragment("? >= ?", field(q, ^fld), type(^value, Ecto.DateTime)))
-  end
   defp _build_date_filter(query, fld, value, :lte) do
-    where(query, [q], fragment("? <= ?", field(q, ^fld), type(^value, Ecto.DateTime)))
+    where(query, [q], field(q, ^fld) <= ^cast_date_time(value, :lte))
+  end
+  defp _build_date_filter(query, fld, value, :gte) do
+    where(query, [q], field(q, ^fld) >= ^cast_date_time(value, :gte))
   end
 
   defp build_boolean_filters(builder, filters, condition) do
@@ -97,11 +97,12 @@ defmodule ExQueb do
     where(query, [q], is_nil(field(q, ^fld)))
   end
 
-  defp cast_date_time(value) do
-    {:ok, date} = Ecto.Date.cast(value)
-    date
-    |> Ecto.DateTime.from_date
-    |> Ecto.DateTime.to_string
+  defp cast_date_time(value, :lte) do
+    NaiveDateTime.from_iso8601!("#{value} 23:59:59")
+  end
+
+  defp cast_date_time(value, :gte) do
+    NaiveDateTime.from_iso8601!("#{value} 00:00:00")
   end
 
   defp map_filters(builder, filters, condition, reduce_fn, map_value_fn\\fn v -> v end) do
@@ -174,12 +175,18 @@ defmodule ExQueb do
 
   defp get_default_order_by_field(query) do
     case query do
-      %{from: {_, mod}} ->
+      %Ecto.Query{} = q ->
+        mod = query_to_module(q)
         case mod.__schema__(:primary_key) do
           [name |_] -> name
           _ -> mod.__schema__(:fields) |> List.first
         end
       _ -> :id
     end
+  end
+
+  defp query_to_module(%Ecto.Query{} = q) do
+    {_table, module} = q.from.source
+    module
   end
 end

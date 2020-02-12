@@ -1,7 +1,7 @@
 defmodule ExQueb.Mixfile do
   use Mix.Project
 
-  @version "1.0.1"
+  @version "1.0.1-avril"
 
   def project do
     [app: :ex_queb,

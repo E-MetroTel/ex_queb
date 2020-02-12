@@ -165,6 +165,18 @@ defmodule ExQuebTest do
     assert_equal ExQueb.filter(Test.Model, %{q: %{age_is: "null"}}), expected
   end
 
+  test "date filter lower or equal than" do
+    date = Date.utc_today
+    expected = where(Test.Model, [m], m.inserted_at <= ^NaiveDateTime.from_iso8601!("#{Date.to_string(date)} 23:59:59"))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{inserted_at_lte: Date.to_string(date)}}), expected
+  end
+
+  test "date filter greater or equal than" do
+    date = Date.utc_today
+    expected = where(Test.Model, [m], m.inserted_at >= ^NaiveDateTime.from_iso8601!("#{Date.to_string(date)} 00:00:00"))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{inserted_at_gte: Date.to_string(date)}}), expected
+  end
+
   test "embed filter is not null" do
     expected = where(Test.Model, [m], not is_nil(m.embed))
     assert_equal ExQueb.filter(Test.Model, %{q: %{embed_is: "not_null"}}), expected
