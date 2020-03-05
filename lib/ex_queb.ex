@@ -10,19 +10,25 @@ defmodule ExQueb do
   Uses the :q query parameter to build the filter.
   """
   def filter(query, params) do
-    q = params[Application.get_env(:ex_queb, :filter_param, :q)]
-    if q do
-      filters = Map.to_list(q)
-      |> Enum.filter(&(not elem(&1,1) in ["", nil]))
-      |> Enum.map(&({Atom.to_string(elem(&1, 0)), elem(&1, 1)}))
-
+    filters =
+      params[Application.get_env(:ex_queb, :filter_param, :q)]
+      |> params_to_filters()
+      if filters do
       query
       |> ExQueb.StringFilters.string_filters(filters)
       |> integer_filters(filters)
       |> date_filters(filters)
+      |> boolean_filters(filters)
     else
       query
     end
+  end
+
+  def params_to_filters(nil), do: nil
+  def params_to_filters(q) do
+    Map.to_list(q)
+    |> Enum.filter(fn {_k, v} -> v not in ["", nil, []] end)
+    |> Enum.map(&({Atom.to_string(elem(&1, 0)), elem(&1, 1)}))
   end
 
   defp integer_filters(builder, filters) do
@@ -30,6 +36,7 @@ defmodule ExQueb do
     |> build_integer_filters(filters, :eq)
     |> build_integer_filters(filters, :lt)
     |> build_integer_filters(filters, :gt)
+    |> build_integer_filters(filters, :in)
   end
 
   defp date_filters(builder, filters) do
@@ -38,13 +45,13 @@ defmodule ExQueb do
     |> build_date_filters(filters, :lte)
   end
 
+  defp boolean_filters(builder, filters) do
+    builder
+    |> build_boolean_filters(filters, :is)
+  end
+
   defp build_integer_filters(builder, filters, condition) do
-    filters
-    |> Enum.filter(& String.match?(elem(&1,0), ~r/_#{condition}$/))
-    |> Enum.map(& {String.replace(elem(&1, 0), "_#{condition}", ""), elem(&1, 1)})
-    |> Enum.reduce(builder, fn({k,v}, acc) ->
-      _build_integer_filter(acc, String.to_atom(k), v, condition)
-    end)
+    map_filters(builder, filters, condition, &_build_integer_filter/4)
   end
 
   defp _build_integer_filter(query, fld, value, :eq) do
@@ -62,28 +69,49 @@ defmodule ExQueb do
   defp _build_integer_filter(query, fld, value, :gt) do
     where(query, [q], field(q, ^fld) > ^value)
   end
+  defp _build_integer_filter(query, fld, value, :in) do
+    value_list = value |> String.split(",") |> Enum.map(&String.trim/1) |> Enum.map(&String.to_integer/1)
+    where(query, [q], field(q, ^fld) in ^value_list)
+  end
 
   defp build_date_filters(builder, filters, condition) do
+    map_filters(builder, filters, condition, &_build_date_filter/4)
+  end
+
+  defp _build_date_filter(query, fld, value, :lte) do
+    where(query, [q], field(q, ^fld) <= ^cast_date_time(value, :lte))
+  end
+  defp _build_date_filter(query, fld, value, :gte) do
+    where(query, [q], field(q, ^fld) >= ^cast_date_time(value, :gte))
+  end
+
+  defp build_boolean_filters(builder, filters, condition) do
+    map_filters(builder, filters, condition, &_build_boolean_filter/4)
+  end
+
+  defp _build_boolean_filter(query, fld, "not_null", :is) do
+    where(query, [q], not is_nil(field(q, ^fld)))
+  end
+
+  defp _build_boolean_filter(query, fld, "null", :is) do
+    where(query, [q], is_nil(field(q, ^fld)))
+  end
+
+  defp cast_date_time(value, :lte) do
+    NaiveDateTime.from_iso8601!("#{value} 23:59:59")
+  end
+
+  defp cast_date_time(value, :gte) do
+    NaiveDateTime.from_iso8601!("#{value} 00:00:00")
+  end
+
+  defp map_filters(builder, filters, condition, reduce_fn, map_value_fn\\fn v -> v end) do
     filters
     |> Enum.filter(& String.match?(elem(&1,0), ~r/_#{condition}$/))
     |> Enum.map(& {String.replace(elem(&1, 0), "_#{condition}", ""), elem(&1, 1)})
     |> Enum.reduce(builder, fn({k,v}, acc) ->
-      _build_date_filter(acc, String.to_atom(k), cast_date_time(v), condition)
+      reduce_fn.(acc, String.to_atom(k), map_value_fn.(v), condition)
     end)
-  end
-
-  defp _build_date_filter(query, fld, value, :gte) do
-    where(query, [q], fragment("? >= ?", field(q, ^fld), type(^value, Ecto.DateTime)))
-  end
-  defp _build_date_filter(query, fld, value, :lte) do
-    where(query, [q], fragment("? <= ?", field(q, ^fld), type(^value, Ecto.DateTime)))
-  end
-
-  defp cast_date_time(value) do
-    {:ok, date} = Ecto.Date.cast(value)
-    date
-    |> Ecto.DateTime.from_date
-    |> Ecto.DateTime.to_string
   end
 
   @doc """
@@ -147,12 +175,18 @@ defmodule ExQueb do
 
   defp get_default_order_by_field(query) do
     case query do
-      %{from: {_, mod}} ->
+      %Ecto.Query{} = q ->
+        mod = query_to_module(q)
         case mod.__schema__(:primary_key) do
           [name |_] -> name
           _ -> mod.__schema__(:fields) |> List.first
         end
       _ -> :id
     end
+  end
+
+  defp query_to_module(%Ecto.Query{} = q) do
+    {_table, module} = q.from.source
+    module
   end
 end

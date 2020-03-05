@@ -3,6 +3,16 @@ defmodule Test.Model do
   schema "models" do
     field :name, :string
     field :age, :integer
+    embeds_one(:embed, Test.Embed)
+
+    timestamps()
+  end
+end
+
+defmodule Test.Embed do
+  use Ecto.Schema
+  schema "models" do
+    field :name, :string
 
     timestamps()
   end
@@ -80,6 +90,36 @@ defmodule ExQuebTest do
     assert_equal ExQueb.build_order_bys(query, opts, :index, [resource: "noprimarys"]), expected
   end
 
+  test "integer filter greater than" do
+    expected = where(Test.Model, [m], m.age > ^10)
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_gt: 10}}), expected
+  end
+
+  test "integer filter lower than" do
+    expected = where(Test.Model, [m], m.age < ^10)
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_lt: 10}}), expected
+  end
+
+  test "integer filter lower than nil" do
+    expected = Test.Model
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_lt: nil}}), expected
+  end
+
+  test "integer filter in single element list" do
+    expected = where(Test.Model, [m], m.age in ^[10])
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_in: "10"}}), expected
+  end
+
+  test "integer filter in list" do
+    expected = where(Test.Model, [m], m.age in ^[10, 11, 12])
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_in: "10,11,12"}}), expected
+  end
+
+  test "integer filter in list with spaces" do
+    expected = where(Test.Model, [m], m.age in ^[10, 11, 12])
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_in: "10, 11 , 12"}}), expected
+  end
+
   test "string filter contains" do
     expected = where(Test.Model, [m], like(fragment("LOWER(?)", m.name), ^"%test%"))
     assert_equal ExQueb.filter(Test.Model, %{q: %{name_contains: "Test"}}), expected
@@ -98,6 +138,53 @@ defmodule ExQuebTest do
   test "string filter equals" do
     expected = where(Test.Model, [m], fragment("LOWER(?)", m.name) == fragment("LOWER(?)", ^"Test"))
     assert_equal ExQueb.filter(Test.Model, %{q: %{name_equals: "Test"}}), expected
+  end
+
+  test "string filter equals nil" do
+    expected = Test.Model
+    assert_equal ExQueb.filter(Test.Model, %{q: %{name_equals: nil}}), expected
+  end
+
+  test "string filter is not null" do
+    expected = where(Test.Model, [m], not is_nil(m.name))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{name_is: "not_null"}}), expected
+  end
+
+  test "string filter is null" do
+    expected = where(Test.Model, [m], is_nil(m.name))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{name_is: "null"}}), expected
+  end
+
+  test "integer filter is not null" do
+    expected = where(Test.Model, [m], not is_nil(m.age))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_is: "not_null"}}), expected
+  end
+
+  test "integer filter is null" do
+    expected = where(Test.Model, [m], is_nil(m.age))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{age_is: "null"}}), expected
+  end
+
+  test "date filter lower or equal than" do
+    date = Date.utc_today
+    expected = where(Test.Model, [m], m.inserted_at <= ^NaiveDateTime.from_iso8601!("#{Date.to_string(date)} 23:59:59"))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{inserted_at_lte: Date.to_string(date)}}), expected
+  end
+
+  test "date filter greater or equal than" do
+    date = Date.utc_today
+    expected = where(Test.Model, [m], m.inserted_at >= ^NaiveDateTime.from_iso8601!("#{Date.to_string(date)} 00:00:00"))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{inserted_at_gte: Date.to_string(date)}}), expected
+  end
+
+  test "embed filter is not null" do
+    expected = where(Test.Model, [m], not is_nil(m.embed))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{embed_is: "not_null"}}), expected
+  end
+
+  test "embed filter is null" do
+    expected = where(Test.Model, [m], is_nil(m.embed))
+    assert_equal ExQueb.filter(Test.Model, %{q: %{embed_is: "null"}}), expected
   end
 
   def assert_equal(a, b) do
