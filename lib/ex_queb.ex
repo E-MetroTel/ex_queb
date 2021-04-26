@@ -13,7 +13,7 @@ defmodule ExQueb do
     filters =
       params[Application.get_env(:ex_queb, :filter_param, :q)]
       |> params_to_filters()
-      if filters do
+    if filters do
       query
       |> ExQueb.StringFilters.string_filters(filters)
       |> integer_filters(filters)
@@ -97,6 +97,22 @@ defmodule ExQueb do
     where(query, [q], is_nil(field(q, ^fld)))
   end
 
+  defp _build_boolean_filter(query, fld, "not_exists", :is) do
+    from(
+      m in query,
+      as: :query,
+      where: not exists(ExQueb.Utils.build_exists_subquery(query, fld, :query))
+    )
+  end
+
+  defp _build_boolean_filter(query, fld, "exists", :is) do
+    from(
+      m in query,
+      as: :query,
+      where: exists(ExQueb.Utils.build_exists_subquery(query, fld, :query))
+    )
+  end
+
   defp cast_date_time(value, :lte) do
     NaiveDateTime.from_iso8601!("#{value} 23:59:59")
   end
@@ -176,17 +192,12 @@ defmodule ExQueb do
   defp get_default_order_by_field(query) do
     case query do
       %Ecto.Query{} = q ->
-        mod = query_to_module(q)
+        mod = ExQueb.Utils.query_to_module(q)
         case mod.__schema__(:primary_key) do
           [name |_] -> name
           _ -> mod.__schema__(:fields) |> List.first
         end
       _ -> :id
     end
-  end
-
-  defp query_to_module(%Ecto.Query{} = q) do
-    {_table, module} = q.from.source
-    module
   end
 end

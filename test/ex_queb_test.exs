@@ -4,7 +4,8 @@ defmodule Test.Model do
     field :name, :string
     field :age, :integer
     embeds_one(:embed, Test.Embed)
-
+    belongs_to(:parent, Test.Parent)
+    has_many(:children, Test.Children)
     timestamps()
   end
 end
@@ -37,6 +38,20 @@ defmodule Test.Noprimary do
     field :description, :string
 
     timestamps()
+  end
+end
+
+defmodule Test.Children do
+  use Ecto.Schema
+  schema "children" do
+    belongs_to(:model, Test.Model, foreign_key: :model_id)
+  end
+end
+
+defmodule Test.Parent do
+  use Ecto.Schema
+  schema "parents" do
+    has_many(:children, Test.Model)
   end
 end
 
@@ -185,6 +200,42 @@ defmodule ExQuebTest do
   test "embed filter is null" do
     expected = where(Test.Model, [m], is_nil(m.embed))
     assert_equal ExQueb.filter(Test.Model, %{q: %{embed_is: "null"}}), expected
+  end
+
+  test "children assoc filter not exists" do
+    expected = from(
+      m in Test.Model,
+      as: :query,
+      where: not exists(from(a in Test.Children, where: a.model_id == parent_as(:query).id))
+    )
+    assert_equal ExQueb.filter(Test.Model, %{q: %{children_is: "not_exists"}}), expected
+  end
+
+  test "children assoc filter exists" do
+    expected = from(
+      m in Test.Model,
+      as: :query,
+      where: exists(from(a in Test.Children, where: a.model_id == parent_as(:query).id))
+    )
+    assert_equal ExQueb.filter(Test.Model, %{q: %{children_is: "exists"}}), expected
+  end
+
+  test "parent assoc filter not exists" do
+    expected = from(
+      m in Test.Model,
+      as: :query,
+      where: not exists(from(a in Test.Parent, where: a.id == parent_as(:query).parent_id))
+    )
+    assert_equal ExQueb.filter(Test.Model, %{q: %{parent_is: "not_exists"}}), expected
+  end
+
+  test "parent assoc filter exists" do
+    expected = from(
+      m in Test.Model,
+      as: :query,
+      where: exists(from(a in Test.Parent, where: a.id == parent_as(:query).parent_id))
+    )
+    assert_equal ExQueb.filter(Test.Model, %{q: %{parent_is: "exists"}}), expected
   end
 
   def assert_equal(a, b) do
