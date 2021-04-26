@@ -90,7 +90,7 @@ defmodule ExQueb do
   end
 
   defp _build_boolean_filter(query, fld, "not_null", :is) do
-    case IO.inspect(ExQueb.Utils.get_entry_type(query, fld)) do
+    case ExQueb.Utils.get_entry_type(query, fld) do
       :assoc ->
         from(
           m in query,

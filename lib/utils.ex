@@ -24,7 +24,8 @@ defmodule ExQueb.Utils do
       %Ecto.Association.ManyToMany{
         queryable: association,
         join_through: join_through,
-        join_keys: [{through_owner_key, owner_key}, {through_assoc_key, assoc_key}]
+        join_keys: [{through_owner_key, owner_key}, {through_assoc_key, assoc_key}],
+        where: where
       } ->
         from(a in association,
           join: jt in ^join_through,
@@ -32,15 +33,18 @@ defmodule ExQueb.Utils do
             field(a, ^assoc_key) == field(jt, ^through_assoc_key) and
             field(jt, ^through_owner_key) == field(parent_as(:query), ^owner_key)
         )
+        |> Ecto.Association.combine_assoc_query(where)
       %type{
         queryable: association,
         related_key: related_key,
-        owner_key: owner_key
+        owner_key: owner_key,
       } when type in [Ecto.Association.Has, Ecto.Association.BelongsTo] ->
+        where: where
         from(
           a in association,
           where: field(a, ^related_key) == field(parent_as(:query), ^owner_key)
         )
+        |> Ecto.Association.combine_assoc_query(where)
     end
   end
 
