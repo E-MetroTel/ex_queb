@@ -6,6 +6,8 @@ defmodule Test.Model do
     embeds_one(:embed, Test.Embed)
     belongs_to(:parent, Test.Parent)
     has_many(:children, Test.Children)
+    many_to_many(:others, Test.Other, join_through: "model_others")
+
     timestamps()
   end
 end
@@ -44,7 +46,7 @@ end
 defmodule Test.Children do
   use Ecto.Schema
   schema "children" do
-    belongs_to(:model, Test.Model, foreign_key: :model_id)
+    belongs_to(:model, Test.Model)
   end
 end
 
@@ -52,6 +54,13 @@ defmodule Test.Parent do
   use Ecto.Schema
   schema "parents" do
     has_many(:children, Test.Model)
+  end
+end
+
+defmodule Test.Other do
+  use Ecto.Schema
+  schema "others" do
+    many_to_many(:models, Test.Model, join_through: "model_others")
   end
 end
 
@@ -236,6 +245,36 @@ defmodule ExQuebTest do
       where: exists(from(a in Test.Parent, where: a.id == parent_as(:query).parent_id))
     )
     assert_equal ExQueb.filter(Test.Model, %{q: %{parent_is: "not_null"}}), expected
+  end
+
+  test "many to many assoc filter not exists" do
+    expected = from(
+      m in Test.Model,
+      as: :query,
+      where: not exists(from(
+        o in Test.Other,
+        join: mo in "model_others",
+        on:
+          o.id == mo.other_id and
+          mo.model_id == parent_as(:query).id
+        ))
+    )
+    assert_equal ExQueb.filter(Test.Model, %{q: %{others_is: "null"}}), expected
+  end
+
+  test "many to many assoc filter exists" do
+    expected = from(
+      m in Test.Model,
+      as: :query,
+      where: exists(from(
+        o in Test.Other,
+        join: mo in "model_others",
+        on:
+          o.id == mo.other_id and
+          mo.model_id == parent_as(:query).id
+        ))
+    )
+    assert_equal ExQueb.filter(Test.Model, %{q: %{others_is: "not_null"}}), expected
   end
 
   def assert_equal(a, b) do
