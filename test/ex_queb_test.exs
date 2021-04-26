@@ -6,6 +6,7 @@ defmodule Test.Model do
     embeds_one(:embed, Test.Embed)
     belongs_to(:parent, Test.Parent)
     has_many(:children, Test.Children)
+    has_many(:active_children, Test.Children, where: [is_active: true])
     many_to_many(:others, Test.Other, join_through: "model_others")
 
     timestamps()
@@ -46,6 +47,7 @@ end
 defmodule Test.Children do
   use Ecto.Schema
   schema "children" do
+    field :is_active, :boolean
     belongs_to(:model, Test.Model)
   end
 end
@@ -227,6 +229,24 @@ defmodule ExQuebTest do
       where: exists(from(a in Test.Children, where: a.model_id == parent_as(:query).id))
     )
     assert_equal ExQueb.filter(Test.Model, %{q: %{children_is: "not_null"}}), expected
+  end
+
+  test "active children assoc filter not exists" do
+    expected = from(
+      m in Test.Model,
+      as: :query,
+      where: not exists(from(a in Test.Children, where: a.model_id == parent_as(:query).id and a.is_active == ^true))
+    )
+    assert_equal ExQueb.filter(Test.Model, %{q: %{active_children_is: "null"}}), expected
+  end
+
+  test "active children assoc filter exists" do
+    expected = from(
+      m in Test.Model,
+      as: :query,
+      where: exists(from(a in Test.Children, where: a.model_id == parent_as(:query).id and a.is_active == ^true))
+    )
+    assert_equal ExQueb.filter(Test.Model, %{q: %{active_children_is: "not_null"}}), expected
   end
 
   test "parent assoc filter not exists" do

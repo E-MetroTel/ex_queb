@@ -38,8 +38,8 @@ defmodule ExQueb.Utils do
         queryable: association,
         related_key: related_key,
         owner_key: owner_key,
-      } when type in [Ecto.Association.Has, Ecto.Association.BelongsTo] ->
         where: where
+      } when type in [Ecto.Association.Has, Ecto.Association.BelongsTo] ->
         from(
           a in association,
           where: field(a, ^related_key) == field(parent_as(:query), ^owner_key)
