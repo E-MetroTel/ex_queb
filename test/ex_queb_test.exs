@@ -208,7 +208,7 @@ defmodule ExQuebTest do
       as: :query,
       where: not exists(from(a in Test.Children, where: a.model_id == parent_as(:query).id))
     )
-    assert_equal ExQueb.filter(Test.Model, %{q: %{children_is: "not_exists"}}), expected
+    assert_equal ExQueb.filter(Test.Model, %{q: %{children_is: "null"}}), expected
   end
 
   test "children assoc filter exists" do
@@ -217,7 +217,7 @@ defmodule ExQuebTest do
       as: :query,
       where: exists(from(a in Test.Children, where: a.model_id == parent_as(:query).id))
     )
-    assert_equal ExQueb.filter(Test.Model, %{q: %{children_is: "exists"}}), expected
+    assert_equal ExQueb.filter(Test.Model, %{q: %{children_is: "not_null"}}), expected
   end
 
   test "parent assoc filter not exists" do
@@ -226,7 +226,7 @@ defmodule ExQuebTest do
       as: :query,
       where: not exists(from(a in Test.Parent, where: a.id == parent_as(:query).parent_id))
     )
-    assert_equal ExQueb.filter(Test.Model, %{q: %{parent_is: "not_exists"}}), expected
+    assert_equal ExQueb.filter(Test.Model, %{q: %{parent_is: "null"}}), expected
   end
 
   test "parent assoc filter exists" do
@@ -235,7 +235,7 @@ defmodule ExQuebTest do
       as: :query,
       where: exists(from(a in Test.Parent, where: a.id == parent_as(:query).parent_id))
     )
-    assert_equal ExQueb.filter(Test.Model, %{q: %{parent_is: "exists"}}), expected
+    assert_equal ExQueb.filter(Test.Model, %{q: %{parent_is: "not_null"}}), expected
   end
 
   def assert_equal(a, b) do

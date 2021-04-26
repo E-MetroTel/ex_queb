@@ -1,6 +1,15 @@
 defmodule ExQueb.Utils do
   import Ecto.Query
 
+  def get_entry_type(query, entry) do
+    module = query_to_module(query)
+    cond do
+      module.__schema__(:type, entry) -> :field
+      module.__schema__(:association, entry) -> :assoc
+      true -> nil
+    end
+  end
+
   def query_to_module(%Ecto.Query{from: %{source: {_table_name, module}}}) do
     module
   end

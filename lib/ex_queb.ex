@@ -90,27 +90,31 @@ defmodule ExQueb do
   end
 
   defp _build_boolean_filter(query, fld, "not_null", :is) do
-    where(query, [q], not is_nil(field(q, ^fld)))
+    case ExQueb.Utils.get_entry_type(query, fld) do
+      :field ->
+        where(query, [q], not is_nil(field(q, ^fld)))
+      :assoc ->
+        from(
+          m in query,
+          as: :query,
+          where: exists(ExQueb.Utils.build_exists_subquery(query, fld, :query))
+        )
+      nil -> query
+    end
   end
 
   defp _build_boolean_filter(query, fld, "null", :is) do
-    where(query, [q], is_nil(field(q, ^fld)))
-  end
-
-  defp _build_boolean_filter(query, fld, "not_exists", :is) do
-    from(
-      m in query,
-      as: :query,
-      where: not exists(ExQueb.Utils.build_exists_subquery(query, fld, :query))
-    )
-  end
-
-  defp _build_boolean_filter(query, fld, "exists", :is) do
-    from(
-      m in query,
-      as: :query,
-      where: exists(ExQueb.Utils.build_exists_subquery(query, fld, :query))
-    )
+    case ExQueb.Utils.get_entry_type(query, fld) do
+      :field ->
+        where(query, [q], is_nil(field(q, ^fld)))
+      :assoc ->
+        from(
+          m in query,
+          as: :query,
+          where: not exists(ExQueb.Utils.build_exists_subquery(query, fld, :query))
+        )
+      nil -> query
+    end
   end
 
   defp cast_date_time(value, :lte) do
