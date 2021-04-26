@@ -4,8 +4,8 @@ defmodule ExQueb.Utils do
   def get_entry_type(query, entry) do
     module = query_to_module(query)
     cond do
-      module.__schema__(:type, entry) -> :field
       module.__schema__(:association, entry) -> :assoc
+      module.__schema__(:type, entry) -> :field
       true -> nil
     end
   end

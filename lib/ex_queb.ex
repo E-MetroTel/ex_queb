@@ -90,29 +90,29 @@ defmodule ExQueb do
   end
 
   defp _build_boolean_filter(query, fld, "not_null", :is) do
-    case ExQueb.Utils.get_entry_type(query, fld) do
-      :field ->
-        where(query, [q], not is_nil(field(q, ^fld)))
+    case IO.inspect(ExQueb.Utils.get_entry_type(query, fld)) do
       :assoc ->
         from(
           m in query,
           as: :query,
           where: exists(ExQueb.Utils.build_exists_subquery(query, fld, :query))
         )
+      :field ->
+        where(query, [q], not is_nil(field(q, ^fld)))
       nil -> query
     end
   end
 
   defp _build_boolean_filter(query, fld, "null", :is) do
     case ExQueb.Utils.get_entry_type(query, fld) do
-      :field ->
-        where(query, [q], is_nil(field(q, ^fld)))
       :assoc ->
         from(
           m in query,
           as: :query,
           where: not exists(ExQueb.Utils.build_exists_subquery(query, fld, :query))
         )
+      :field ->
+        where(query, [q], is_nil(field(q, ^fld)))
       nil -> query
     end
   end
